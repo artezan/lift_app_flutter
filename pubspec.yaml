@@ -39,6 +39,16 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  fonts:
+    - family: Dosis
+      fonts:
+        - asset: fonts/Dosis-Bold.otf
+        - asset: fonts/Dosis-ExtraBold.otf
+        - asset: fonts/Dosis-ExtraLight.otf
+        - asset: fonts/Dosis-Light.otf
+        - asset: fonts/Dosis-Medium.otf
+        - asset: fonts/Dosis-Regular.otf
+        - asset: fonts/Dosis-SemiBold.otf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
