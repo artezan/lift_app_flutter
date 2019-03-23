@@ -1,0 +1,73 @@
+{
+  "project_info": {
+    "project_number": "597114331964",
+    "firebase_url": "https://liftapp-flutter.firebaseio.com",
+    "project_id": "liftapp-flutter",
+    "storage_bucket": "liftapp-flutter.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:597114331964:android:4cefccdaffd3490f",
+        "android_client_info": {
+          "package_name": "com.example.lift_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "597114331964-emvhf21v5qtbhjq4hvo8vn2l09ea8672.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTm9Gt-gmPSV-mIHxKnU1rFf9uKRgL_ZY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:597114331964:android:c80de9af5c932d70",
+        "android_client_info": {
+          "package_name": "com.flutter.cesarartezan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "597114331964-emvhf21v5qtbhjq4hvo8vn2l09ea8672.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTm9Gt-gmPSV-mIHxKnU1rFf9uKRgL_ZY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

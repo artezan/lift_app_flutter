@@ -1,8 +1,27 @@
+import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+
 import 'package:flutter/material.dart';
+import 'package:lift_app/alert_dialog.dart';
 import 'package:lift_app/days_tabs.dart';
 import 'package:lift_app/rutine_cards.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:localstorage/localstorage.dart';
 
-void main() => runApp(MyApp());
+Future<void> main() async {
+  final FirebaseApp app = await FirebaseApp.configure(
+    name: 'liftApp-flutter',
+    options: const FirebaseOptions(
+      googleAppID: '1:597114331964:android:4cefccdaffd3490f',
+      gcmSenderID: '597114331964',
+      apiKey: 'AIzaSyDakbtN1KFrTFBAac-VS5DGwymdg7H70qI',
+      projectID: 'liftapp-flutter',
+    ),
+  );
+  final Firestore firestore = Firestore(app: app);
+  await firestore.settings(timestampsInSnapshotsEnabled: true);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -66,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
       currentDay = getCurrentDate - 1;
     }
     blocks = _getblocks(currentDay);
+    // Local Storage
   }
 
   get getCurrentDate {
@@ -82,8 +102,21 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+// todo localstore
+  get userIdFirebase => 'ROasIinc7hArHKskLM6T';
+
+  _getRoutines() {
+    Firestore.instance
+        .collection('routines')
+        .where("uid", isEqualTo: userIdFirebase)
+        .snapshots()
+        .listen(
+            (data) => data.documents.forEach((doc) => print(doc['blocks'])));
+  }
+
   _getblocks(dayNumber) {
     // filter data Firebase
+
     List<Map<String, Object>> blocks = [
       {
         'day': dayNumber,
@@ -119,6 +152,20 @@ class _MyHomePageState extends State<MyHomePage> {
     return blocks;
   }
 
+  _showAlert() {
+    ShowAlert().confirmDialog(context).then((bool value) {
+      _getRoutines();
+      print(value);
+    });
+  }
+
+  _showAlertUserEmail() {
+    ShowAlert().confirmDialog(context).then((bool value) {
+      _getRoutines();
+      print(value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,6 +177,10 @@ class _MyHomePageState extends State<MyHomePage> {
             backgroundColor: Colors.deepPurple),
         body: Column(
           children: <Widget>[
+            RaisedButton(
+              child: Text('Alert'),
+              onPressed: _showAlert,
+            ),
             DaysTabs(days, currentDay, _callback),
             RutineCards(blocks)
           ],
