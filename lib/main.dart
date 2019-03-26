@@ -4,9 +4,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lift_app/alert_dialog.dart';
 import 'package:lift_app/days_tabs.dart';
+import 'package:lift_app/models/user.model.dart';
 import 'package:lift_app/rutine_cards.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:localstorage/localstorage.dart';
+import 'package:rxdart/rxdart.dart';
 
 Future<void> main() async {
   final FirebaseApp app = await FirebaseApp.configure(
@@ -57,7 +59,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Map<String, Object> dayOfTab;
-  List<Map<String, Object>> blocks;
+  dynamic blocks;
+  final LocalStorage storage = new LocalStorage('user_login');
+  final LocalStorage storageRutines = new LocalStorage('user_rutines');
+  BehaviorSubject _user$ = BehaviorSubject.seeded(false);
+  Map<String, dynamic> routine;
   int currentDay;
   // List days
   List<Map<String, Object>> days = [
@@ -84,13 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       currentDay = getCurrentDate - 1;
     }
-    blocks = _getblocks(currentDay);
-    // Local Storage
   }
 
   get getCurrentDate {
     final now = new DateTime.now();
-    print(now.weekday);
     return now.weekday;
   }
 
@@ -98,92 +101,219 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       dayOfTab = newDay;
       print(dayOfTab);
-      blocks = _getblocks(dayOfTab['id']);
+      currentDay = dayOfTab['id'];
     });
   }
 
+// FIREBASE
 // todo localstore
-  get userIdFirebase => 'ROasIinc7hArHKskLM6T';
+  get userIdFirebase => _user$.value['id'];
 
-  _getRoutines() {
+  _getRoutines(int number) {
     Firestore.instance
         .collection('routines')
         .where("uid", isEqualTo: userIdFirebase)
+        .where("number", isEqualTo: number)
+        .limit(1)
         .snapshots()
-        .listen(
-            (data) => data.documents.forEach((doc) => print(doc['blocks'])));
+        .listen((data) => data.documents.forEach((doc) => doc.exists
+            ? _trasformRoutines(doc.data)
+            : _user$.add({'id': userIdFirebase, 'routine': false})));
+  }
+
+  _addUserFirebase(user) {
+    Map<String, dynamic> usr = User.doMap(user);
+    Firestore.instance
+        .collection('user')
+        .add(usr)
+        .then((onValue) => _addToLocalUser(onValue.documentID));
+  }
+
+  _getUserFirebase(User user) {
+    Map<String, dynamic> usr = User.doMap(user);
+    Firestore.instance
+        .collection('user')
+        .where('name', isEqualTo: usr['name'])
+        .where('lastName', isEqualTo: usr['lastName'])
+        .limit(1)
+        .snapshots()
+        .listen((data) => data.documents.forEach((doc) =>
+            doc.exists ? _trasformId(doc.documentID) : _user$.add(false)));
+  }
+
+  // Local
+  _addToLocalUser(String id) {
+    print(id);
+    storage.setItem('user_login', id);
+  }
+
+  _addToLocalRoutine(routine) {
+    print('guardo rut');
+    print(routine);
+    storageRutines.setItem('user_rutines', routine);
+  }
+
+  _logoutLocalUser() {
+    print('salida');
+    _user$.add(false);
+    storage.deleteItem('user_login');
+    storageRutines.deleteItem('user_rutines');
+  }
+
+  _logoutLocalRoutines() {
+    _user$.add({'id': userIdFirebase, 'routine': false});
+    storageRutines.deleteItem('user_rutines');
+  }
+
+  // Rutinas
+
+  _trasformRoutines(Map<String, dynamic> data) {
+    _addToLocalRoutine(data);
+    _user$.add({'id': userIdFirebase, 'routine': data});
+    routine = data;
+  }
+
+  _trasformId(id) {
+    _addToLocalUser(id);
+    _user$.add({'id': id});
   }
 
   _getblocks(dayNumber) {
     // filter data Firebase
-
-    List<Map<String, Object>> blocks = [
-      {
-        'day': dayNumber,
-        'exercises': [
-          {
-            'description': 'es hasta el pecho',
-            'name': 'Jalon al pecho',
-            'reps': 12
-          },
-          {
-            'description': 'es hasta el pecho2',
-            'name': 'Jalon al pecho2',
-            'reps': 10
-          }
-        ]
-      },
-      {
-        'day': dayNumber,
-        'exercises': [
-          {
-            'description': 'es hasta el pecho',
-            'name': 'Jalon al pecho',
-            'reps': 12
-          },
-          {
-            'description': 'es hasta el pecho2',
-            'name': 'Jalon al pecho2',
-            'reps': 10
-          }
-        ]
-      }
-    ];
-    return blocks;
+    print(dayNumber);
+    var b = routine['blocks'].where((b) => b['day'] == dayNumber).toList();
+    print(b);
+    return b;
   }
+  // Alerts
 
-  _showAlert() {
-    ShowAlert().confirmDialog(context).then((bool value) {
-      _getRoutines();
-      print(value);
+  _showAlertRutine() {
+    ShowAlert().loadRutine(context).then((int value) {
+      _getRoutines(value);
     });
   }
 
-  _showAlertUserEmail() {
-    ShowAlert().confirmDialog(context).then((bool value) {
-      _getRoutines();
-      print(value);
+  _showAlertNewUser() {
+    ShowAlert().newUser(context).then((User value) {
+      _addUserFirebase(value);
     });
+  }
+
+  _showAlertLoginUser() {
+    ShowAlert().newUser(context).then((User value) {
+      _getUserFirebase(value);
+    });
+  }
+
+// Casos
+  Widget normalData() {
+    return Column(
+      children: <Widget>[
+        DaysTabs(days, currentDay, _callback),
+        RutineCards(blocks)
+      ],
+    );
+  }
+
+  Widget reqForUserLogin() {
+    return Center(
+      child: Container(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            // nuevo
+            RaisedButton(
+              onPressed: _showAlertNewUser,
+              child: Text('Nuevo Usuario'),
+            ),
+            RaisedButton(
+              onPressed: _showAlertLoginUser,
+              child: Text('Iniciar Sesion'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget reqForRutine() {
+    return Center(
+      child: Container(
+        child: RaisedButton(
+          onPressed: _showAlertRutine,
+          child: Text('Cargar Rutina'),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            title: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.title,
-            ),
-            backgroundColor: Colors.deepPurple),
-        body: Column(
-          children: <Widget>[
-            RaisedButton(
-              child: Text('Alert'),
-              onPressed: _showAlert,
-            ),
-            DaysTabs(days, currentDay, _callback),
-            RutineCards(blocks)
+          title: Text(
+            widget.title,
+            style: Theme.of(context).textTheme.title,
+          ),
+          backgroundColor: Colors.deepPurple,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.exit_to_app),
+              onPressed: _logoutLocalUser,
+            )
           ],
+        ),
+        body: FutureBuilder(
+          future: storage.ready,
+          builder: (BuildContext context, snapshot) {
+            // check localstorage
+            if (snapshot.data == true) {
+              print(storageRutines.getItem('user_rutines'));
+              print(storage.getItem('user_login'));
+              // check obs
+              return StreamBuilder(
+                stream: _user$.stream,
+                builder: (BuildContext context, AsyncSnapshot snap) {
+                  if (snap.hasData == true) {
+                    if (snap.data == false) {
+                      if (storage.getItem('user_login') == null) {
+                        return reqForUserLogin();
+                      } else if (storageRutines.getItem('user_rutines') ==
+                          null) {
+                        print(storageRutines.getItem('user_rutines'));
+                        print(storage.getItem('user_login'));
+                        return reqForRutine();
+                      } else {
+                        _user$.add({
+                          'id': storage.getItem('user_login'),
+                          'routine': storageRutines.getItem('user_rutines')
+                        });
+                        return new Container(width: 0.0, height: 0.0);
+                      }
+                    } else {
+                      if (storageRutines.getItem('user_rutines') == null) {
+                        return reqForRutine();
+                      } else {
+                        routine = snap.data['routine'];
+                        _addToLocalUser(snap.data['id']);
+                        blocks = _getblocks(currentDay);
+                        return normalData();
+                      }
+                    }
+                  } else {
+                    return new Container(width: 0.0, height: 0.0);
+                  }
+                },
+              );
+            } else {
+              return Center(
+                child: Container(
+                  child: Text('Cargando...'),
+                ),
+              );
+            }
+          },
         ));
   }
 }

@@ -1,18 +1,18 @@
-class Rutine {
+class Routine {
   final DateTime endDate;
   final int number;
   final DateTime startDate;
   final String uid;
   final List<Block> blocks;
 
-  Rutine({this.number, this.startDate, this.uid, this.blocks, this.endDate});
+  Routine({this.number, this.startDate, this.uid, this.blocks, this.endDate});
 
-  factory Rutine.fromJson(Map<String, dynamic> parsedJson) {
+  factory Routine.fromJson(Map<String, dynamic> parsedJson) {
     var list = parsedJson['blocks'] as List;
     print(list.runtimeType);
     List<Block> blocksList = list.map((i) => Block.fromJson(i)).toList();
 
-    return Rutine(
+    return Routine(
         endDate: parsedJson['endDate'],
         startDate: parsedJson['startDate'],
         uid: parsedJson['uid'],

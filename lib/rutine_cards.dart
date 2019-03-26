@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class RutineCards extends StatelessWidget {
 // fake list
 
-  final List<Map<String, Object>> _rutinesList;
+  final _rutinesList;
 
   RutineCards(this._rutinesList);
 
@@ -24,9 +24,9 @@ class RutineCards extends StatelessWidget {
           children: <Widget>[
             Column(
               children: _rutinesList
-                  .map((block) => Card(
+                  .map<Widget>((block) => Card(
                         child: Column(
-                          children: _getArray(block['exercises'])
+                          children: block['exercises']
                               .map<Widget>((exercise) => Column(
                                     children: <Widget>[
                                       ListTile(
@@ -35,7 +35,7 @@ class RutineCards extends StatelessWidget {
                                         subtitle: Text(exercise['description']),
                                       ),
                                       Chip(
-                                        label: Text('Reps ${block['day']}'),
+                                        label: Text('Reps ${exercise['reps']}'),
                                       )
                                     ],
                                   ))

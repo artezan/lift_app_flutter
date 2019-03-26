@@ -1,0 +1,32 @@
+{
+  "endDate": {
+    "_seconds": 1553752800,
+    "_nanoseconds": 0
+  },
+  "uid": "ROasIinc7hArHKskLM6T",
+  "number": 1,
+  "blocks": [
+    {
+      "exercises": [
+        {
+          "reps": 12,
+          "name": "Jalon al pecho",
+          "description": "es hasta el pecho"
+        },
+        {
+          "description": "es invertido",
+          "reps": 8,
+          "name": "Jalon al pecho invertido"
+        }
+      ],
+      "day": 0,
+      "series": 4,
+      "number": 1,
+      "typeMuscle": "espalda"
+    }
+  ],
+  "startDate": {
+    "_seconds": 1551160800,
+    "_nanoseconds": 0
+  }
+}
