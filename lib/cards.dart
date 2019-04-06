@@ -4,17 +4,31 @@ class Cards extends StatelessWidget {
   final block;
   Cards(this.block);
 
-  _buildExercises() {
+  _buildExercises(BuildContext context) {
     return block['exercises']
         .map<Widget>((exercise) => Column(
               children: <Widget>[
                 ListTile(
-                  leading: Icon(Icons.album),
-                  title: Text(exercise['name']),
+                  leading: Icon(Icons.fitness_center),
+                  title: Text(
+                    exercise['name'],
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
                   subtitle: Text(exercise['description']),
                 ),
-                Chip(
-                  label: Text('Reps ${exercise['reps']}'),
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Chip(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      label: Text('Series ${block['series']}'),
+                    ),
+                    Chip(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      label: Text('Reps ${exercise['reps']}'),
+                    )
+                  ],
                 )
               ],
             ))
@@ -50,9 +64,7 @@ class Cards extends StatelessWidget {
                 colorFilter: ColorFilter.mode(
                     Color.fromARGB(30, 0, 0, 0), BlendMode.srcIn),
                 fit: BoxFit.scaleDown)),
-        child: Column(
-          children: _buildExercises(),
-        ),
+        child: ListView(children: _buildExercises(context)),
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10.0),

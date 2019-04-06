@@ -20,6 +20,8 @@ class RutineCards extends StatefulWidget {
 class _RutineCardsState extends State<RutineCards> {
   // Crea controller
   PageController ctrl;
+  // opacity
+  double _opacity = 0;
 
   @override
   void initState() {
@@ -28,6 +30,18 @@ class _RutineCardsState extends State<RutineCards> {
     ctrl = PageController(
         viewportFraction: 0.8, keepPage: true, initialPage: widget.currentPage);
     // Set state when page changes
+  }
+
+  bool isButtonSelect = false;
+
+  _setButton(n) {
+    setState(() {
+      if (n != 0) {
+        _opacity = 1.0;
+      } else {
+        _opacity = 0;
+      }
+    });
   }
 
   @override
@@ -56,6 +70,7 @@ class _RutineCardsState extends State<RutineCards> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
+                    fullscreenDialog: true,
                     builder: (context) => CardDetail(block, currentIdx)),
                 // MaterialPageRoute(builder: (context) => _selectedCard(block)),
               );
@@ -70,28 +85,53 @@ class _RutineCardsState extends State<RutineCards> {
 
   @override
   Widget build(BuildContext context) {
-    return PageView.builder(
-        onPageChanged: (n) => widget.callbackPage(n),
-        controller: ctrl,
-        itemCount: widget.blocks.length + 1,
-        itemBuilder: (context, int currentIdx) {
-          if (currentIdx == 0) {
-            return DaysTabs(widget.days, widget.currentDay, widget.callbackDay);
-          } else if (widget.blocks.length >= currentIdx) {
-            // Active page
-            bool isActive = currentIdx == widget.currentPage;
-            // Animated Properties
-            Map<String, double> settings = {
-              'blur': isActive ? 7 : 1,
-              'offsetX': isActive ? 9 : 0,
-              'offsetY': isActive ? 17 : 3,
-              'top': isActive ? 25 : 100,
-              'bottom': isActive ? 25 : 100,
-              'color': isActive ? 50 : 0
-            };
-            return _buildCard(
-                widget.blocks[currentIdx - 1], settings, currentIdx);
-          }
-        });
+    return Scaffold(
+      floatingActionButton: AnimatedOpacity(
+        duration: Duration(milliseconds: 400),
+        curve: Curves.bounceInOut,
+        opacity: _opacity,
+        child: FloatingActionButton(
+          heroTag: "floatBtn",
+          mini: true,
+          child: Icon(Icons.arrow_back),
+          onPressed: () {
+            isButtonSelect = true;
+            ctrl.animateToPage(0,
+                curve: Curves.fastOutSlowIn,
+                duration: Duration(milliseconds: 1000));
+          },
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      body: PageView.builder(
+          onPageChanged: (n) {
+            widget.callbackPage(n);
+            _setButton(n);
+          },
+          controller: ctrl,
+          itemCount: widget.blocks.length + 1,
+          itemBuilder: (context, int currentIdx) {
+            if (currentIdx == 0) {
+              isButtonSelect = false;
+              return DaysTabs(
+                  widget.days, widget.currentDay, widget.callbackDay);
+            } else if (widget.blocks.length >= currentIdx) {
+              // Active page
+              bool isActive =
+                  currentIdx == widget.currentPage && !isButtonSelect;
+              // Animated Properties
+              Map<String, double> settings = {
+                'blur': isActive ? 7 : 1,
+                'offsetX': isActive ? 9 : 0,
+                'offsetY': isActive ? 17 : 3,
+                'top': isActive ? 35 : 100,
+                'bottom': isActive ? 25 : 100,
+                'color': isActive ? 50 : 0
+              };
+              return _buildCard(
+                  widget.blocks[currentIdx - 1], settings, currentIdx);
+            }
+          }),
+    );
   }
 }

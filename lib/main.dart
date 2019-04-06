@@ -36,6 +36,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         primarySwatch: Colors.deepPurple,
         accentColor: Color(0xFFc678dd),
+        primaryColor: Colors.deepPurple,
         // Define the default Font Family
         fontFamily: 'Dosis',
         textTheme: TextTheme(
@@ -71,6 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentPage = 0;
   bool flagPageGo = false;
 
+  bool hasNewRutine = false;
+
   // List days
   List<Map<String, Object>> days = [
     {'name': 'Lunes', 'id': 0},
@@ -102,6 +105,28 @@ class _MyHomePageState extends State<MyHomePage> {
     final now = new DateTime.now();
     return now.weekday;
   }
+  // Verifica nueva rutina
+
+  _checkNewRoutine() {
+    print(_user$.value['routine']['startDate']);
+    Firestore.instance
+        .collection('routines')
+        .where("uid", isEqualTo: userIdFirebase)
+        .where("startDate", isEqualTo: _user$.value['routine']['startDate'])
+        .snapshots()
+        .listen((data) {
+      print('getLastRolutine');
+      print(data.documents.isNotEmpty);
+
+      toogleCloud(data.documents.isEmpty);
+    });
+  }
+
+  void toogleCloud(data) {
+    setState(() {
+      hasNewRutine = data;
+    });
+  }
 
   //  callback
 
@@ -122,11 +147,11 @@ class _MyHomePageState extends State<MyHomePage> {
 // todo localstore
   get userIdFirebase => _user$.value['id'];
 
-  _getRoutines(int number) {
+  _getRoutines() {
     Firestore.instance
         .collection('routines')
         .where("uid", isEqualTo: userIdFirebase)
-        .where("number", isEqualTo: number)
+        .where("number", isEqualTo: 1)
         .limit(1)
         .snapshots()
         .listen((data) => data.documents.forEach((doc) => doc.exists
@@ -156,7 +181,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Local
   _addToLocalUser(String id) {
-    print(id);
     storage.setItem('user_login', id);
   }
 
@@ -186,21 +210,22 @@ class _MyHomePageState extends State<MyHomePage> {
   _trasformId(id) {
     _addToLocalUser(id);
     _user$.add({'id': id});
+    _getRoutines();
   }
 
   _getblocks(dayNumber) {
     // filter data Firebase
-    var b = routine['blocks'].where((b) => b['day'] == dayNumber).toList();
-    print(b);
+    List b = routine['blocks'].where((b) => b['day'] == dayNumber).toList();
+    b.sort((a, b) {
+      if (a['number'] > b['number']) {
+        return 1;
+      } else {
+        return -1;
+      }
+    });
     return b;
   }
   // Alerts
-
-  _showAlertRutine() {
-    ShowAlert().loadRutine(context).then((int value) {
-      _getRoutines(value);
-    });
-  }
 
   _showAlertNewUser() {
     ShowAlert().newUser(context).then((User value) {
@@ -242,17 +267,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget reqForRutine() {
-    return Center(
-      child: Container(
-        child: RaisedButton(
-          onPressed: _showAlertRutine,
-          child: Text('Cargar Rutina'),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,6 +277,16 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           backgroundColor: Colors.deepPurple,
           actions: <Widget>[
+            Opacity(
+              opacity: hasNewRutine ? 1.0 : 0.0,
+              child: IconButton(
+                icon: Icon(Icons.cloud_download),
+                onPressed: () {
+                  _getRoutines();
+                  toogleCloud(false);
+                },
+              ),
+            ),
             IconButton(
               icon: Icon(Icons.exit_to_app),
               onPressed: _logoutLocalUser,
@@ -282,25 +306,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     if (snap.data == false) {
                       if (storage.getItem('user_login') == null) {
                         return reqForUserLogin();
-                      } else if (storageRutines.getItem('user_rutines') ==
-                          null) {
-                        return reqForRutine();
                       } else {
                         _user$.add({
                           'id': storage.getItem('user_login'),
                           'routine': storageRutines.getItem('user_rutines')
                         });
+                        _checkNewRoutine();
+                        // print(new DateTime.now().millisecondsSinceEpoch);
                         return new Container(width: 0.0, height: 0.0);
                       }
                     } else {
-                      if (storageRutines.getItem('user_rutines') == null) {
-                        return reqForRutine();
-                      } else {
-                        routine = snap.data['routine'];
-                        _addToLocalUser(snap.data['id']);
-                        blocks = _getblocks(currentDay);
-                        return normalData();
-                      }
+                      routine = snap.data['routine'];
+                      _addToLocalUser(snap.data['id']);
+                      blocks = _getblocks(currentDay);
+                      return normalData();
                     }
                   } else {
                     return new Container(width: 0.0, height: 0.0);
