@@ -9,8 +9,50 @@ class DaysTabs extends StatefulWidget {
   _DaysTabsState createState() => _DaysTabsState();
 }
 
-// SingleTickerProviderStateMixin is used for animation
-class _DaysTabsState extends State<DaysTabs>
+class _DaysTabsState extends State<DaysTabs> {
+  // Create a tab controller
+  TabController controller;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  _buildButton(Map day) {
+    Color color =
+        day['id'] == widget._dayInput ? Colors.purple : Colors.black54;
+    return FlatButton(
+        color: color,
+        child: Text('${day['name']}'),
+        onPressed: () {
+          widget.callback(day);
+        });
+  }
+
+  @override
+  Widget build(BuildContext contex) {
+    return Container(
+        child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Rutinas',
+          style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+        ),
+        Text('#Dias',
+            style:
+                TextStyle(color: Theme.of(context).accentColor, fontSize: 25)),
+        Column(
+            children:
+                widget.days.map<Widget>((day) => _buildButton(day)).toList())
+      ],
+    ));
+  }
+}
+
+// SingleTickerProviderStateMixin is used for animation SOLO TABS
+/* class _DaysTabsState extends State<DaysTabs>
     with SingleTickerProviderStateMixin {
   // Create a tab controller
   TabController controller;
@@ -44,4 +86,4 @@ class _DaysTabsState extends State<DaysTabs>
       },
     );
   }
-}
+} */

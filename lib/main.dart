@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'package:flutter/material.dart';
 import 'package:lift_app/alert_dialog.dart';
+import 'package:lift_app/cards.dart';
 import 'package:lift_app/days_tabs.dart';
 import 'package:lift_app/models/user.model.dart';
 import 'package:lift_app/rutine_cards.dart';
@@ -64,7 +65,12 @@ class _MyHomePageState extends State<MyHomePage> {
   final LocalStorage storageRutines = new LocalStorage('user_rutines');
   BehaviorSubject _user$ = BehaviorSubject.seeded(false);
   Map<String, dynamic> routine;
+  // BehaviorSubject exSelect$ = BehaviorSubject.seeded(false);
+
   int currentDay;
+  int currentPage = 0;
+  bool flagPageGo = false;
+
   // List days
   List<Map<String, Object>> days = [
     {'name': 'Lunes', 'id': 0},
@@ -97,11 +103,18 @@ class _MyHomePageState extends State<MyHomePage> {
     return now.weekday;
   }
 
+  //  callback
+
   _callback(Map<String, Object> newDay) {
     setState(() {
       dayOfTab = newDay;
-      print(dayOfTab);
       currentDay = dayOfTab['id'];
+    });
+  }
+
+  _callbackPage(int newCurrentPage) {
+    setState(() {
+      currentPage = newCurrentPage;
     });
   }
 
@@ -148,13 +161,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _addToLocalRoutine(routine) {
-    print('guardo rut');
-    print(routine);
     storageRutines.setItem('user_rutines', routine);
   }
 
   _logoutLocalUser() {
-    print('salida');
     _user$.add(false);
     storage.deleteItem('user_login');
     storageRutines.deleteItem('user_rutines');
@@ -180,7 +190,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _getblocks(dayNumber) {
     // filter data Firebase
-    print(dayNumber);
     var b = routine['blocks'].where((b) => b['day'] == dayNumber).toList();
     print(b);
     return b;
@@ -207,12 +216,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
 // Casos
   Widget normalData() {
-    return Column(
-      children: <Widget>[
-        DaysTabs(days, currentDay, _callback),
-        RutineCards(blocks)
-      ],
-    );
+    return RutineCards(
+        blocks, days, currentDay, currentPage, _callbackPage, _callback);
   }
 
   Widget reqForUserLogin() {
@@ -269,8 +274,6 @@ class _MyHomePageState extends State<MyHomePage> {
           builder: (BuildContext context, snapshot) {
             // check localstorage
             if (snapshot.data == true) {
-              print(storageRutines.getItem('user_rutines'));
-              print(storage.getItem('user_login'));
               // check obs
               return StreamBuilder(
                 stream: _user$.stream,
@@ -281,8 +284,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         return reqForUserLogin();
                       } else if (storageRutines.getItem('user_rutines') ==
                           null) {
-                        print(storageRutines.getItem('user_rutines'));
-                        print(storage.getItem('user_login'));
                         return reqForRutine();
                       } else {
                         _user$.add({
@@ -317,3 +318,73 @@ class _MyHomePageState extends State<MyHomePage> {
         ));
   }
 }
+
+// ANIMACIONES
+
+/*    Widget normalData() {
+  return StreamBuilder(
+        stream: exSelect$,
+        builder: (BuildContext context, AsyncSnapshot snap) {
+          if (snap.hasData) {
+            /*   return AnimatedCrossFade(
+              duration: const Duration(milliseconds: 500),
+              firstChild: RutineCards(blocks, days, currentDay, currentPage,
+                  _callbackPage, _callback),
+              secondChild:
+                  _selectedCard(blocks[currentPage == 0 ? 0 : currentPage - 1]),
+              crossFadeState: !snap.data
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+            ); */
+            double top = snap.data ? 0 : 25;
+            double bottom = snap.data ? 0 : 25;
+            double right = snap.data ? 0 : 15;
+            double left = snap.data ? 0 : 5;
+            return AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.bounceIn,
+              margin: EdgeInsets.only(
+                  top: top, bottom: bottom, left: left, right: right),
+              child: snap.data
+                  ? _selectedCard(blocks[currentPage - 1])
+                  : RutineCards(blocks, days, currentDay, currentPage,
+                      _callbackPage, _callback),
+            );
+            /* if (!snap.data) {
+              return RutineCards(blocks, days, currentDay, currentPage,
+                  _callbackPage, _callback);
+            } else {
+              return AnimatedContainer(
+                duration: Duration(milliseconds: 500),
+                curve: Curves.bounceIn,
+                margin: EdgeInsets.all(0),
+                child: _selectedCard(blocks[currentPage - 1]),
+              );
+
+              // return _selectedCard(blocks[currentPage - 1]);
+            } */
+          } else {
+            return new Container(width: 0.0, height: 0.0);
+          }
+        }); 
+  }*/
+
+/*  Widget _selectedCard(block) {
+    return Stack(
+      children: <Widget>[
+        Cards(block),
+        Positioned(
+          left: 150,
+          bottom: 30.0,
+          child: Container(
+            child: FloatingActionButton(
+              child: Icon(Icons.arrow_downward),
+              onPressed: () {
+                exSelect$.add(false);
+              },
+            ),
+          ),
+        )
+      ],
+    );
+  } */
