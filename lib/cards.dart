@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
 
-class Cards extends StatelessWidget {
+class Cards extends StatefulWidget {
   final block;
-  Cards(this.block);
+  final bool isDecorator;
+  Cards(this.block, this.isDecorator);
+  @override
+  _CardsState createState() => _CardsState();
+}
+
+class _CardsState extends State<Cards> with SingleTickerProviderStateMixin {
+  AnimationController _controller;
+  Animation _animation;
+  @override
+  void initState() {
+    _controller =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _animation = Tween(begin: 0.5, end: 1.0).animate(_controller);
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    /*  _timer.cancel();
+    _timer = null;
+    super.dispose(); */
+    _controller.dispose();
+    super.dispose();
+  }
 
   _buildExercises(BuildContext context) {
-    return block['exercises']
+    return widget.block['exercises']
         .map<Widget>((exercise) => Column(
               children: <Widget>[
                 ListTile(
@@ -16,23 +41,73 @@ class Cards extends StatelessWidget {
                   ),
                   subtitle: Text(exercise['description']),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Chip(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      label: Text('Series ${block['series']}'),
-                    ),
-                    Chip(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      label: Text('Reps ${exercise['reps']}'),
-                    )
-                  ],
+                Container(
+                  child: widget.isDecorator
+                      ? decoratedBoxNumber('Series ${widget.block['series']} ',
+                          'Reps ${exercise['reps']}', context)
+                      : columnNumber(context, exercise),
+                ),
+                Divider(
+                  height: 25,
                 )
               ],
             ))
         .toList();
+  }
+
+  Column columnNumber(BuildContext context, exercise) {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text(
+          'Series ${widget.block['series']} ',
+          style: TextStyle(fontSize: 20, color: Theme.of(context).accentColor),
+        ),
+        Icon(
+          Icons.cancel,
+          color: Theme.of(context).accentColor,
+        ),
+        Text(
+          'Reps ${exercise['reps']}',
+          style: TextStyle(fontSize: 20, color: Theme.of(context).accentColor),
+        ),
+      ],
+    );
+  }
+
+  decoratedBoxNumber(String series, String reps, context) {
+    _controller.forward();
+    return FadeTransition(
+        opacity: _animation,
+        child: DecoratedBox(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey, width: 2)),
+            child: Container(
+              width: 300,
+              height: 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    series,
+                    style: TextStyle(
+                        fontSize: 20, color: Theme.of(context).accentColor),
+                  ),
+                  Icon(
+                    Icons.cancel,
+                    color: Theme.of(context).accentColor,
+                  ),
+                  Text(
+                    reps,
+                    style: TextStyle(
+                        fontSize: 20, color: Theme.of(context).accentColor),
+                  ),
+                ],
+              ),
+            )));
   }
 
   _typeOfMuscle(String muscle) {
@@ -59,8 +134,8 @@ class Cards extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
             image: DecorationImage(
-                image:
-                    AssetImage('assets/${_typeOfMuscle(block['typeMuscle'])}'),
+                image: AssetImage(
+                    'assets/${_typeOfMuscle(widget.block['typeMuscle'])}'),
                 colorFilter: ColorFilter.mode(
                     Color.fromARGB(30, 0, 0, 0), BlendMode.srcIn),
                 fit: BoxFit.scaleDown)),

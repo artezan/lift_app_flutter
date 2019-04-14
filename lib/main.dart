@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:lift_app/alert_dialog.dart';
 import 'package:lift_app/cards.dart';
 import 'package:lift_app/days_tabs.dart';
+import 'package:lift_app/login.dart';
 import 'package:lift_app/models/user.model.dart';
 import 'package:lift_app/rutine_cards.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,17 +27,22 @@ Future<void> main() async {
   runApp(MyApp());
 }
 
+// TODO: Make a general theme obs
+
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'LIFTAPP',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.deepPurple,
+        // #BA68C8 o c678dd
         accentColor: Color(0xFFc678dd),
         primaryColor: Colors.deepPurple,
+
         // Define the default Font Family
         fontFamily: 'Dosis',
         textTheme: TextTheme(
@@ -246,7 +252,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget reqForUserLogin() {
-    return Center(
+    return Login(_getUserFirebase);
+    /*  return Center(
       child: Container(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -264,77 +271,81 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-    );
+    ); */
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.title,
-            style: Theme.of(context).textTheme.title,
-          ),
-          backgroundColor: Colors.deepPurple,
-          actions: <Widget>[
-            Opacity(
-              opacity: hasNewRutine ? 1.0 : 0.0,
-              child: IconButton(
-                icon: Icon(Icons.cloud_download),
-                onPressed: () {
-                  _getRoutines();
-                  toogleCloud(false);
-                },
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.exit_to_app),
-              onPressed: _logoutLocalUser,
-            )
-          ],
+      appBar: AppBar(
+        title: Text(
+          widget.title,
+          style: Theme.of(context).textTheme.title,
         ),
-        body: FutureBuilder(
-          future: storage.ready,
-          builder: (BuildContext context, snapshot) {
-            // check localstorage
-            if (snapshot.data == true) {
-              // check obs
-              return StreamBuilder(
-                stream: _user$.stream,
-                builder: (BuildContext context, AsyncSnapshot snap) {
-                  if (snap.hasData == true) {
-                    if (snap.data == false) {
-                      if (storage.getItem('user_login') == null) {
-                        return reqForUserLogin();
-                      } else {
-                        _user$.add({
-                          'id': storage.getItem('user_login'),
-                          'routine': storageRutines.getItem('user_rutines')
-                        });
-                        _checkNewRoutine();
-                        // print(new DateTime.now().millisecondsSinceEpoch);
-                        return new Container(width: 0.0, height: 0.0);
-                      }
+        backgroundColor: Colors.deepPurple,
+        actions: <Widget>[
+          Opacity(
+            opacity: hasNewRutine ? 1.0 : 0.0,
+            child: IconButton(
+              icon: Icon(Icons.cloud_download),
+              onPressed: () {
+                _getRoutines();
+                toogleCloud(false);
+              },
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.exit_to_app),
+            onPressed: _logoutLocalUser,
+          )
+        ],
+      ),
+      body: FutureBuilder(
+        future: storage.ready,
+        builder: (BuildContext context, snapshot) {
+          // check localstorage
+          if (snapshot.data == true) {
+            // check obs
+            return StreamBuilder(
+              stream: _user$.stream,
+              builder: (BuildContext context, AsyncSnapshot snap) {
+                if (snap.hasData == true) {
+                  if (snap.data == false) {
+                    if (storage.getItem('user_login') == null) {
+                      return reqForUserLogin();
                     } else {
-                      routine = snap.data['routine'];
-                      _addToLocalUser(snap.data['id']);
-                      blocks = _getblocks(currentDay);
-                      return normalData();
+                      _user$.add({
+                        'id': storage.getItem('user_login'),
+                        'routine': storageRutines.getItem('user_rutines')
+                      });
+                      _checkNewRoutine();
+                      // print(new DateTime.now().millisecondsSinceEpoch);
+                      return new Container(width: 0.0, height: 0.0);
                     }
                   } else {
-                    return new Container(width: 0.0, height: 0.0);
+                    routine = snap.data['routine'];
+                    _addToLocalUser(snap.data['id']);
+                    if (routine.isNotEmpty) {
+                      blocks = _getblocks(currentDay);
+                    }
+
+                    return normalData();
                   }
-                },
-              );
-            } else {
-              return Center(
-                child: Container(
-                  child: Text('Cargando...'),
-                ),
-              );
-            }
-          },
-        ));
+                } else {
+                  return new Container(width: 0.0, height: 0.0);
+                }
+              },
+            );
+          } else {
+            return Center(
+              child: Container(
+                child: Text('Cargando...'),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 }
 

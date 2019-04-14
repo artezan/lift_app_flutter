@@ -11,40 +11,9 @@ class CardDetail extends StatefulWidget {
   _CardDetailState createState() => _CardDetailState();
 }
 
-class _CardDetailState extends State<CardDetail>
-    with SingleTickerProviderStateMixin {
-  /* double left = 0;
-  Timer _timer; */
-  // prueba
-  AnimationController _controller;
-  Animation _animation;
-  @override
-  void initState() {
-    /*  _timer = Timer(Duration(milliseconds: 300), () {
-      setState(() {
-        print('mueve');
-        left = 20;
-      });
-    }); */
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
-    _animation = Tween(begin: 0.0, end: 1.0).animate(_controller);
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    /*  _timer.cancel();
-    _timer = null;
-    super.dispose(); */
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _CardDetailState extends State<CardDetail> {
   @override
   Widget build(BuildContext context) {
-    _controller.forward();
     return Scaffold(
       body: Container(
         padding: EdgeInsets.only(top: 10),
@@ -52,7 +21,7 @@ class _CardDetailState extends State<CardDetail>
           children: <Widget>[
             Hero(
               tag: "heroTag1${widget.currentIdx}",
-              child: Cards(widget.block),
+              child: Cards(widget.block, true),
             ),
             /* AnimatedPositioned(
               duration: Duration(milliseconds: 500),
@@ -69,16 +38,7 @@ class _CardDetailState extends State<CardDetail>
             Positioned(
                 right: 30,
                 top: 30,
-                child:
-                    /* FadeTransition(
-                opacity: _animation,
-                child: FloatingActionButton(
-                  mini: true,
-                  child: Icon(Icons.arrow_downward),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ), */
-                    Hero(
+                child: Hero(
                   tag: "floatBtn",
                   child: FloatingActionButton(
                     mini: true,

@@ -78,7 +78,7 @@ class _RutineCardsState extends State<RutineCards> {
             child: Hero(
               tag: "heroTag1$currentIdx",
               child: Container(
-                child: Cards(block),
+                child: Cards(block, false),
               ),
             )));
   }
