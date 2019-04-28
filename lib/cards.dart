@@ -120,9 +120,11 @@ class _CardsState extends State<Cards> with SingleTickerProviderStateMixin {
     } else if (muscle == 'triceps') {
       return 'triceps.png';
     } else if (muscle == 'hombro') {
-      return 'fitness.png';
+      return 'barbell.png';
     } else if (muscle == 'pecho') {
       return 'chest.png';
+    } else if (muscle == 'espalda') {
+      return 'back.png';
     }
   }
 

@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/material.dart';
 import 'package:lift_app/alert_dialog.dart';
-import 'package:lift_app/cards.dart';
-import 'package:lift_app/days_tabs.dart';
 import 'package:lift_app/login.dart';
 import 'package:lift_app/models/user.model.dart';
 import 'package:lift_app/rutine_cards.dart';
@@ -12,7 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:rxdart/rxdart.dart';
 
-Future<void> main() async {
+/* Future<void> main() async {
   final FirebaseApp app = await FirebaseApp.configure(
     name: 'liftApp-flutter',
     options: const FirebaseOptions(
@@ -25,7 +24,9 @@ Future<void> main() async {
   final Firestore firestore = Firestore(app: app);
   await firestore.settings(timestampsInSnapshotsEnabled: true);
   runApp(MyApp());
-}
+} */
+
+void main() => runApp(MyApp());
 
 // TODO: Make a general theme obs
 
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
+
         primarySwatch: Colors.deepPurple,
         // #BA68C8 o c678dd
         accentColor: Color(0xFFc678dd),
@@ -73,6 +75,10 @@ class _MyHomePageState extends State<MyHomePage> {
   BehaviorSubject _user$ = BehaviorSubject.seeded(false);
   Map<String, dynamic> routine;
   // BehaviorSubject exSelect$ = BehaviorSubject.seeded(false);
+  // Global key
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  // Firebase Msg
+  FirebaseMessaging _firebaseMessaging = new FirebaseMessaging();
 
   int currentDay;
   int currentPage = 0;
@@ -87,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
     {'name': 'Miercoles', 'id': 2},
     {'name': 'Jueves', 'id': 3},
     {'name': 'Viernes', 'id': 4},
-    // {'name': 'Sabado', 'id': 5},
+    {'name': 'Sabado', 'id': 5},
     // {'name': 'Domingo', 'id': 6},
   ];
   // otra forma
@@ -105,6 +111,36 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       currentDay = getCurrentDate - 1;
     }
+    // Listen changes
+    _user$.stream.listen((data) {
+      // Map<String, dynamic> res = data;
+      if (data != false) {
+        if (data['routine'] != null) {
+          _checkEndDate(data['routine']['endDate']);
+        }
+      }
+    });
+    // firebase msg
+    _firebaseMessaging.configure(
+      onMessage: (Map<String, dynamic> message) async {
+        print("onMessage: $message");
+        showInSnackBar('Tienes una nueva rutina 📥');
+      },
+      onLaunch: (Map<String, dynamic> message) async {
+        print("onLaunch: $message");
+        showInSnackBar('Tienes una nueva rutina 📥');
+      },
+      onResume: (Map<String, dynamic> message) async {
+        print("onResume: $message");
+        showInSnackBar('Tienes una nueva rutina 📥');
+      },
+    );
+    /* _firebaseMessaging.getToken().then((String token) {
+      setState(() {
+        var homeScreenText = "Push Messaging token: $token";
+        print(homeScreenText);
+      });
+    }); */
   }
 
   get getCurrentDate {
@@ -114,18 +150,35 @@ class _MyHomePageState extends State<MyHomePage> {
   // Verifica nueva rutina
 
   _checkNewRoutine() {
-    print(_user$.value['routine']['startDate']);
-    Firestore.instance
-        .collection('routines')
-        .where("uid", isEqualTo: userIdFirebase)
-        .where("startDate", isEqualTo: _user$.value['routine']['startDate'])
-        .snapshots()
-        .listen((data) {
-      print('getLastRolutine');
-      print(data.documents.isNotEmpty);
+    if (_user$.value['routine'] != null) {
+      Firestore.instance
+          .collection('routines')
+          .where("uid", isEqualTo: userIdFirebase)
+          .where("startDate", isEqualTo: _user$.value['routine']['startDate'])
+          .snapshots()
+          .listen((data) {
+        toogleCloud(data.documents.isEmpty);
+      });
+    }
+  }
 
-      toogleCloud(data.documents.isEmpty);
-    });
+  _checkEndDate(dateFb) {
+    // print(new DateTime.now().millisecondsSinceEpoch);
+    var dateNow = DateTime.now().millisecondsSinceEpoch;
+    if (dateFb < dateNow) {
+      showInSnackBar('Ya toca cambio de rutina 📅 ');
+    }
+  }
+
+  void showInSnackBar(String value) {
+    _scaffoldKey.currentState.showSnackBar(SnackBar(
+      content: Text(
+        value,
+        style: TextStyle(color: Colors.black),
+      ),
+      backgroundColor: Colors.white70,
+      duration: Duration(seconds: 3),
+    ));
   }
 
   void toogleCloud(data) {
@@ -150,7 +203,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 // FIREBASE
-// todo localstore
   get userIdFirebase => _user$.value['id'];
 
   _getRoutines() {
@@ -195,6 +247,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _logoutLocalUser() {
+    // unsubs FB Msg
+    _firebaseMessaging.unsubscribeFromTopic('topic-$userIdFirebase');
     _user$.add(false);
     storage.deleteItem('user_login');
     storageRutines.deleteItem('user_rutines');
@@ -217,6 +271,8 @@ class _MyHomePageState extends State<MyHomePage> {
     _addToLocalUser(id);
     _user$.add({'id': id});
     _getRoutines();
+    // topic FB MSG
+    _firebaseMessaging.subscribeToTopic('topic-$id');
   }
 
   _getblocks(dayNumber) {
@@ -251,6 +307,33 @@ class _MyHomePageState extends State<MyHomePage> {
         blocks, days, currentDay, currentPage, _callbackPage, _callback);
   }
 
+  Widget emptyData() {
+    return Container(
+      child: Padding(
+        padding: EdgeInsets.all(25.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              "No hay rutinas registradas",
+              style: TextStyle(fontSize: 28),
+            ),
+            Image(image: AssetImage('assets/gym.png'))
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget loadStatus() {
+    return Center(
+      child: Container(
+        child: Text('Cargando...'),
+      ),
+    );
+  }
+
   Widget reqForUserLogin() {
     return Login(_getUserFirebase);
     /*  return Center(
@@ -277,6 +360,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(
           widget.title,
@@ -288,6 +372,7 @@ class _MyHomePageState extends State<MyHomePage> {
             opacity: hasNewRutine ? 1.0 : 0.0,
             child: IconButton(
               icon: Icon(Icons.cloud_download),
+              color: Colors.greenAccent,
               onPressed: () {
                 _getRoutines();
                 toogleCloud(false);
@@ -318,30 +403,29 @@ class _MyHomePageState extends State<MyHomePage> {
                         'id': storage.getItem('user_login'),
                         'routine': storageRutines.getItem('user_rutines')
                       });
+                      // check new routine
                       _checkNewRoutine();
-                      // print(new DateTime.now().millisecondsSinceEpoch);
-                      return new Container(width: 0.0, height: 0.0);
+
+                      return loadStatus();
                     }
                   } else {
                     routine = snap.data['routine'];
                     _addToLocalUser(snap.data['id']);
-                    if (routine.isNotEmpty) {
+                    if (routine != null && routine.isNotEmpty) {
+                      // check endDate
                       blocks = _getblocks(currentDay);
+                      return normalData();
+                    } else {
+                      return emptyData();
                     }
-
-                    return normalData();
                   }
                 } else {
-                  return new Container(width: 0.0, height: 0.0);
+                  return loadStatus();
                 }
               },
             );
           } else {
-            return Center(
-              child: Container(
-                child: Text('Cargando...'),
-              ),
-            );
+            return loadStatus();
           }
         },
       ),

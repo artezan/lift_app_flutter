@@ -20,9 +20,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Firebase
   firebase_core: ^0.3.0 # add dependency for Firebase Core
   firebase_analytics: ^1.0.4 # add dependency for Google Analytics for Firebase
   cloud_firestore: ^0.9.7
+  firebase_messaging: any
 
   # flare
 

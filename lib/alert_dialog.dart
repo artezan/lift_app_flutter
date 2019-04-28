@@ -61,7 +61,7 @@ class ShowAlert {
                               return 'Anota Nombre';
                             }
                           },
-                          onSaved: (val) => newUser.name = val,
+                          onSaved: (val) => newUser.name = val.trim(),
                         ),
                         TextFormField(
                           decoration: InputDecoration(
@@ -72,7 +72,7 @@ class ShowAlert {
                               return 'Anota Apellido';
                             }
                           },
-                          onSaved: (val) => newUser.lastName = val,
+                          onSaved: (val) => newUser.lastName = val.trim(),
                         ),
                       ],
                     ),

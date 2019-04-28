@@ -15,10 +15,11 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   AnimationController _controller;
   Animation _animation;
+  Timer _timer;
   final FlareControls _controlsF = FlareControls();
   @override
   void initState() {
-    Timer.periodic(new Duration(seconds: 5), (timer) {
+    _timer = Timer.periodic(new Duration(seconds: 5), (timer) {
       setState(() {
         _controlsF.play('go');
       });
@@ -32,11 +33,11 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _timer.cancel();
     super.dispose();
   }
 
   _showAlertLoginUser() {
-    print('tap');
     ShowAlert().newUser(context).then((User value) {
       widget.callbackRes(value);
     });
